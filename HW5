@@ -1,0 +1,114 @@
+//******************************  main.cpp  *********************************
+
+#include <iostream>
+#include<fstream>
+#include <math.h>
+#include <vector>
+class node {
+public:
+	int value;
+	char source;
+	node *left, *right, *parent;
+
+	node(int v) : value(v), source('n'),
+		left(nullptr), right(nullptr), parent(nullptr) {}
+};
+
+int main(int argc, const char * argv[])
+{
+	std::ifstream in;
+	in.open("Source.txt");
+	//int array
+	int z;
+	std::vector<int> data;
+	while (in >> z) {
+		data.push_back(z);
+	}
+	in.close();
+	int N = data.size();
+	//element E
+	int E=0;
+	for (int c = 0; c < N; c++) {
+		if(E <= data[c]){
+			E = data[c] + 1;
+		}
+	}
+	//determine k
+	int k;
+	for (int a = 0; pow(2,a) < N; a++) {
+		if (pow(2, a) == N) {
+			k = a;
+		}
+		else {
+			k = a + 1;
+		}
+	}
+
+	//make 2^k nodes/ leaves of the tree
+	std::vector<node*> tree;
+	
+	for (int b = 0; b < N; b++) {
+		tree.push_back(new node(data[b])) ;
+	}
+	for (int d=N; d < pow(2, k); d++) {
+		tree.push_back ( new node(E));
+	}
+	//make parent node
+	
+	for (int e = k; e >0; e--) {
+		for (int f = 0; f < pow(2,e-1); f++) {
+			if (tree[2 * f]->value >= tree[2 * f + 1]->value) {
+				node* temp = new node(tree[2 * f + 1]->value);
+				temp->source = 'r';
+				temp->right = tree[2 * f + 1];
+				temp->left = tree[2 * f];
+				tree[2 * f + 1]->parent = temp;
+				tree[2 * f]->parent = temp;
+				tree[f] = temp;
+			
+			}
+			else {
+				node* temp = new node(tree[2 * f]->value);
+				temp->source = 'l';
+				temp->right = tree[2 * f + 1];
+				temp->left = tree[2 * f];
+				tree[2 * f]->parent = temp;
+				tree[2 * f + 1]->parent = temp;			
+				tree[f] = temp;
+			}
+		}
+	}
+
+	node* root = tree[0];
+	for (int g = 0; g < N; g++) {
+		data[g] = root->value;
+		std::cout << root->value << std::endl;
+		node* temp = root;
+		//replace the root by E.
+		while (temp->left != nullptr) {
+			if(temp->source == 'r') {
+				temp = temp->right;
+			}
+			else {
+				temp = temp->left;
+			}
+		}
+		temp->value = E;
+
+			while(temp!=root)
+			{
+			if (temp->parent->right->value >= temp->parent->left->value) {
+				temp->parent->value = temp->parent->left->value;
+				temp->parent->source = 'l';
+				temp = temp->parent;
+			}
+			else {
+				temp->parent->value = temp->parent->right->value;
+				temp->parent->source = 'r';
+				temp = temp->parent;
+			}
+		}
+
+	}
+	return 0;
+}
