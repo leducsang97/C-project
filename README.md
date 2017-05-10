@@ -1,5 +1,5 @@
 Project from my class:
-
+I used Visual Studio 2017 Community
 _______________________________________________________________________________________________________
 Homework 1 - Pointer version of selection sort:
 
