@@ -1,0 +1,119 @@
+//*****************************  main.cpp  ********************************
+#include <vector>
+#include<iostream>
+#include<fstream>
+using std::vector;
+
+#define HEIGHT 10
+#define WIDTH 10
+
+
+//Search row by row and find the first white cell. Return the location of that cell.
+std::vector<int> findFirstWhite(vector<vector<char> > &grid) {
+	std::vector<int > v;
+	for (int r = 0; r < 10; r++) {
+		for (int c = 0; c < 10; c++) {
+			if (grid[r][c] == 'w') {
+				v.push_back(r);
+				v.push_back(c);
+				return v;
+			}
+		}
+	}
+	return v;
+}
+
+//function find all white cell in area start from the first white cell
+//change visited white cell to special symbol 'C'.
+void findWhite(vector<vector<char> > &grid, int a, int b) {
+
+	if (a > 9 || a < 0 || b>9 || b < 0) {
+		return;
+	}
+	if (grid[a][b] != 'w') {
+		return;
+	}
+	grid[a][b] = 'C';
+
+	findWhite(grid, a + 1, b);
+	findWhite(grid, a - 1, b);
+	findWhite(grid, a, b + 1);
+	findWhite(grid, a, b - 1);
+}
+
+//Count all special symbol 'C' to caculate number of white cells in an area
+int countWhite(vector<vector<char> > &grid, int a, int b) {
+	findWhite(grid, a, b);
+	int count = 0;
+	for (int r = 0; r < 10; r++) {
+		for (int c = 0; c < 10; c++) {
+			if (grid[r][c] == 'C') {
+				count++;
+			}
+		}
+	}
+	return count;
+
+}
+
+int main(int argc, const char * argv[]) {
+
+	std::ifstream in;
+	std::ofstream out;
+	in.open("source.txt");
+
+	vector<vector<char> > grid;
+
+	// Set up sizes. (HEIGHT x WIDTH)
+	grid.resize(HEIGHT);
+	for (int i = 0; i < HEIGHT; ++i)
+		grid[i].resize(WIDTH);
+
+	char g;
+	for (int r = 0; r < 10; r++) {
+		for (int c = 0; c < 10; c++) {
+			in >> g;
+			grid[r][c] = g;
+		}
+	}
+	in.close();
+
+	for (int n = 0; n < 10; n++) {
+		for (int m = 0; m <10; m++) {
+			std::cout << grid[n][m] << std::flush;
+		}
+		std::cout << std::endl;
+	}
+	int area = 0;
+	std::vector<int> cellInArea, cStore;
+	std::vector<int> &firstPoint = findFirstWhite(grid);
+	while (firstPoint.size() != 0) {
+		findWhite(grid, firstPoint.at(0), firstPoint.at(1));
+		int c = countWhite(grid, firstPoint.at(0), firstPoint.at(1));
+		/*std::cout << c << std::endl;*/
+
+		cStore.push_back(c);
+		if (area == 0) {
+			cellInArea.push_back(c);
+			std::cout << "First area contains: " << cellInArea.at(0) << "cells" << std::endl;
+		}
+		else {
+			cellInArea.push_back(cStore.at(area) - cStore.at(area - 1));
+			std::cout << "Next area contains: " << cellInArea.at(area) << "cells" << std::endl;
+		}
+		firstPoint = findFirstWhite(grid);
+		area++;
+	}
+	std::cout << "number of areas are " << area << std::endl;
+	std::cout << "number of white cells are " << cStore.back() << std::endl;
+	//return 'w' back.
+	for (int r = 0; r < 10; r++) {
+		for (int c = 0; c < 10; c++) {
+			if (grid[r][c] == 'C') {
+				grid[r][c] = 'w';
+			}
+		}
+	}
+
+	return 0;
+};
