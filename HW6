@@ -1,0 +1,154 @@
+//******************************  Test.cpp  **********************************
+
+#include <iostream>
+#include <fstream>
+#include "AVL.h"
+
+
+int main() {
+	AVLTree<int> x;
+
+	std::ifstream in;
+	in.open("data.txt");
+	std::ofstream out("tree.txt");
+	//int array
+	int z;
+	while (in >> z) {
+		x.insert(z);
+		x.snapShot(out);
+	}
+	in.close();
+	out.close();
+	return 0;
+}
+
+//******************************  AVL.h  **************************************
+
+template<class T>
+class AVLNode {
+public:
+	AVLNode() {
+		left = right = nullptr;
+		balance = 0;
+
+	}
+	AVLNode(const T& el, AVLNode *l = nullptr, AVLNode *r = nullptr) {
+		key = el; left = l; right = r;
+		balance = 0;
+		
+	}
+	T key;
+	AVLNode *left, *right;
+	int balance;
+};
+
+template<class T>
+class AVLTree {
+public:
+	AVLTree() { root = nullptr; }
+
+	void insert(const T& key) { insert(root, key); }
+
+	void snapShot(std::ostream& out) {
+		out << "TreeForm[";
+		snapShot(out, root);
+		out << "]" << std::endl;
+	}
+private:
+	AVLNode<T>* root;
+
+	template <class T>
+	int height(AVLNode<T> *n) {
+		if (n == NULL)
+			return 0;//if null point set 0
+		return 1 + (height(n->left) > height(n->right) ? height(n->left) : height(n->right));
+	}
+
+	void bfactor(AVLNode<T>* p)
+	{
+		p->balance= height(p->right) - height(p->left);
+	}
+
+	void rightRotation(AVLNode<T>* &node) {
+		AVLNode<T>* l = node->left;
+		if (l->right == nullptr) {
+			node->left = nullptr;
+		}
+		else {
+			node->left = l->right;
+		}
+		l->right = node;
+		node = l;
+	}
+
+	void leftRotation(AVLNode<T>* &node) {
+		AVLNode<T>* r = node->right;
+		if (r->left == nullptr) {
+			node->right = nullptr;
+		}
+		else {
+			node->right = r->left;
+		}
+		r->left = node;
+		node = r;
+	}
+
+	void reBalance(AVLNode<T>* &node) {
+		bfactor(node);
+		if (node->balance < -1)
+		{
+			if (height(node->left->left) >= height(node->left->right)) {
+				rightRotation(node);
+			}
+			else {
+				leftRotation(node->left);
+				rightRotation(node);
+			}
+		}
+		if (node->balance > 1)
+		{
+			if (height(node->right->right) >= height(node->right->left)) {
+				leftRotation(node);
+			}
+			else {
+				rightRotation(node->right);
+				leftRotation(node);
+			}
+		}
+	}
+	
+	bool insert(AVLNode<T>* &node, const T& key) {
+		if (node == nullptr) {
+			node = new AVLNode<T>(key);
+			return true;
+		}
+		else if (key == node->key) {
+			return false;
+		}
+		
+			AVLNode<T>* &next = key > node->key ? node->right : node->left;
+			insert(next, key);
+			reBalance(node);
+	}
+
+
+		
+
+	void snapShot(std::ostream& out, AVLNode<T> *p) {
+		bfactor(p);
+		out << '\"' << p->key <<":"<<p->balance<< '\"';
+		if (p->left != nullptr || p->right != nullptr) {
+			out << '[';
+			if (p->left == nullptr)
+				out << "\"\"";
+			else
+				snapShot(out, p->left);
+			out << ',';
+			if (p->right == nullptr)
+				out << "\"\"";
+			else
+				snapShot(out, p->right);
+			out << ']';
+		}
+	}
+}; 
