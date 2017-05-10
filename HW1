@@ -1,0 +1,74 @@
+#include <iostream>
+#include <fstream>
+
+// Sort the items between begin and end.
+// end should point just past the end of the
+// range of values being sorted.
+void swap(int* begin, int* current)
+{
+	int temp = *begin;
+	*begin = *current;
+	*current = temp;
+}
+void selectionSort(int* begin, int* end)
+{
+	int *mover = begin;
+	mover++;
+	while (mover != end) {
+		int *min = mover;
+		int *next = mover;
+		next++;
+		while (next != end) {
+			if (*next < *min) {
+				min = next;
+			}
+			else
+				next++;
+		}
+			swap(min, mover);
+		mover++;
+		}
+}
+int main(int argc, const char * argv[])
+{
+	std::ifstream in;
+	std::ofstream out;
+
+	int N = 100;
+	int n = 0;
+	int k;
+	int* A = new int[N];
+
+	in.open("numbers.txt");
+
+	int x;
+	while (in >> x) {
+		// Resize the A array if needed.
+		if (n == N) {
+			int* B = new int[2 * N];
+			for (k = 0; k < n; k++)
+				B[k] = A[k];
+			delete[] A;
+			A = B;
+			N *= 2;
+		}
+		A[n] = x;
+		n++;
+	}
+	in.close();
+
+	std::cout << "Read " << n << " integers from the file." << std::endl;
+
+	selectionSort(A, A + n);
+
+	out.open("sorted.txt");
+	for (k = 0; k < n; k++)
+		out << A[k] << std::endl;
+	out.close();
+
+	delete[] A;
+
+	std::cout << "Done sorting and saving." << std::endl;
+
+	return 0;
+}
