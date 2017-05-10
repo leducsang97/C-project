@@ -13,7 +13,6 @@ void swap(int* begin, int* current)
 void selectionSort(int* begin, int* end)
 {
 	int *mover = begin;
-	mover++;
 	while (mover != end) {
 		int *min = mover;
 		int *next = mover;
