@@ -1,1 +1,46 @@
+#include <iostream>
 
+class String {
+	friend bool operator==(const String&, const String&);
+	friend std::ostream& operator<<(std::ostream&, const String&);
+public:
+	String();
+	String(const char* otherStr);
+	String(const String& other);
+	String(String&& other) noexcept;
+	~String();
+
+	class StringData {
+	public:
+		char* str;
+		int len;
+		int refCount;
+
+		StringData(const char* other);
+	};
+
+	String& operator=(const String& other);
+	String& operator=(String&& other);
+
+	int length() const;
+
+	static void initString();
+	static int memoryUsage();
+	static int maxMemoryUsage();
+	static int copyCount();
+	static int moveCount();
+private:
+	static int memoryUsed;
+	static int maxMemoryUsed;
+	static int copiesMade;
+	static int movesMade;
+
+	/*char* allocMemory(int size);*/
+
+	StringData* data;
+};
+
+
+
+bool operator==(const String& one, const String& two);
+std::ostream& operator<<(std::ostream& out, const String& str);
