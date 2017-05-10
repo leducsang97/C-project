@@ -1,3 +1,5 @@
+//*****************************  String.h  ****************************************
+
 #include <iostream>
 
 class String {
@@ -44,3 +46,210 @@ private:
 
 bool operator==(const String& one, const String& two);
 std::ostream& operator<<(std::ostream& out, const String& str);
+
+
+//*****************************  String.cpp  **************************************
+
+#include "String.h"
+
+int String::memoryUsed;
+int String::maxMemoryUsed;
+int String::copiesMade;
+int String::movesMade;
+
+String::String() :data(new StringData(nullptr))
+{
+	data->len = 0;
+	data->refCount = 0;
+	data->str = nullptr;
+}
+
+String::String(const char* otherStr) {
+	data = new StringData(otherStr);
+	memoryUsed += data->len;
+	if (memoryUsed > maxMemoryUsed)
+		maxMemoryUsed = memoryUsed;
+	data->refCount++;
+}
+
+
+String::StringData::StringData(const char* otherStr) {
+	if (otherStr != nullptr)
+	{
+		len = 0;
+		while (otherStr[len] != '\0')
+			++len;
+		str = new char[len];
+		for (int n = 0; n < len; n++)
+			str[n] = otherStr[n];
+	}
+}
+
+String::String(const String& other) {
+	copiesMade++;
+	data = other.data;
+	data->refCount++;
+}
+
+String::String(String&& other) noexcept {
+	movesMade++;
+	data = other.data;
+	other.data = new StringData(nullptr);
+}
+
+String::~String() {
+	if (data->refCount != 0) {
+
+		data->refCount--;
+	}
+	else {
+		memoryUsed -= data->len;
+		if (data->str != nullptr) {
+			delete data;
+		}
+		delete[] data->str;
+		data->len = 0;
+		data->str = nullptr;
+		delete data;
+	}
+}
+
+String& String::operator=(const String& other) {
+	if (data->refCount != 0) {
+		memoryUsed -= data->len;
+		data->refCount--;
+	}
+	else {
+		memoryUsed -= data->len;
+		if (data->str != nullptr)
+			delete[] data->str;
+		delete data;
+	}
+	data = other.data;
+	data->refCount++;
+	return *this;
+}
+
+String& String::operator=(String&& other) {
+	if (data->refCount != 0) {
+		memoryUsed -= data->len;
+		data->refCount--;
+	}
+	else {
+		if (data->str != nullptr)
+			delete[] data->str;
+		data->len = 0;
+		data->str = nullptr;
+		delete data;
+	}
+	movesMade++;
+	data = other.data;
+
+	other.data = new StringData(nullptr);
+	return *this;
+}
+
+int String::length() const {
+	return data->len;
+}
+
+void String::initString() {
+	memoryUsed = 0;
+	maxMemoryUsed = 0;
+	copiesMade = 0;
+	movesMade = 0;
+}
+
+int String::memoryUsage() {
+	return memoryUsed;
+}
+
+int String::maxMemoryUsage() {
+	return maxMemoryUsed;
+}
+
+int String::copyCount() {
+	return copiesMade;
+}
+
+int String::moveCount() {
+	return movesMade;
+}
+
+bool operator==(const String& one, const String& two)
+{
+	if (one.length() != two.length())
+		return false;
+	int max = one.length();
+	for (int n = 0; n < max; n++)
+		if (one.data->str[n] != two.data->str[n])
+			return false;
+	return true;
+}
+
+std::ostream& operator<<(std::ostream& out, const String& str)
+{
+	for (int n = 0; n < str.data->len; n++)
+		out << str.data->str[n];
+	return out;
+}
+
+
+//*************************** TestString.cpp  ********************************************
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include "String.h"
+
+int main(int argc, const char * argv[]) {
+	std::vector<String> strs;
+	std::vector<String> testStrs;
+	std::vector<String> diffStrs;
+
+	std::ifstream in;
+	char buffer[64];
+
+	String::initString();
+
+	// Read the word list
+	in.open("words.txt");
+	while(in.getline(buffer,63)) {
+		String newStr(buffer);
+		strs.push_back(newStr);
+	}
+	in.close();
+
+	// Read the test words
+	in.open("test.txt");
+	while(in.getline(buffer,63)) {
+		String newStr(buffer);
+		testStrs.push_back(newStr);
+	}
+	in.close();
+
+	// Find all the test words that do not appear on the word list
+	for(auto otr = testStrs.begin();otr != testStrs.end();otr++) {
+		String testStr(*otr);
+		bool found = false;
+		for(auto itr = strs.begin();!found && itr != strs.end();itr++)
+			if(*itr == testStr)
+				found = true;
+
+		if(!found)
+			diffStrs.push_back(testStr);
+	}
+
+	// Print the test words that did not appear on the word list
+	for(auto itr = diffStrs.begin();itr != diffStrs.end();itr++)
+		std::cout << *itr << std::endl;
+
+	// Display memory usage statistics
+	std::cout << "Using memory: " << String::memoryUsage() << std::endl;
+	std::cout << "Max memory: " << String::maxMemoryUsage() << std::endl;
+	std::cout << "Copies made: " << String::copyCount() << std::endl;
+	std::cout << "Moves made: " << String::moveCount() << std::endl;
+	
+	return 0;
+}
+
