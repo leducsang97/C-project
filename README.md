@@ -1,4 +1,5 @@
-Project from my class
+Project from my class:
+
 
 Assignment 1 - Perfect Square:
 
