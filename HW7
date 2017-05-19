@@ -1,0 +1,213 @@
+#include<iostream>
+using namespace std;
+
+template <typename T, int M>
+class BTreeNode {
+	friend class BTree<T, M>;
+public:
+	BTreeNode() {
+		keys = NULL;  keyTally = 0;
+	};
+	BTreeNode(const T& el) {
+		keys[0] = el;  keyTally = 1;
+	};
+	/*BTreeNode(int t) {
+		t = _t;
+		keys = new int[M- 1];
+		pointers = new BTreeNode *[M];
+		keyTally = 0;
+	}*/
+//cai nay deo hieu constructor kieu gi luon
+private:
+	bool leaf;
+	int keyTally;
+	int t = M / 2;
+	T keys[M - 1];
+	BTreeNode* pointers[M];
+};
+
+template <typename T, int M>
+class BTree{
+public:
+	BTreeNode *root; // Pointer to root node
+	int t;  // Minimum degree
+	BTree() { root = nullptr; }//initial a tree
+
+	void insert(const T& key) { insert(key,root); }
+	void traverse()
+	{
+		if (root != NULL)
+			traverse(root);
+	}
+	/*void deleteTree(const T& key) { deleteTree(root, key); }*/
+
+private:
+	BTreeNode *search(keyType k, BTreeNode *node) {
+		// Find the first key greater than or equal to k
+		if (node != 0) {
+			for (i = 1; i <= node->keyTally && k > node->keys[i]; i++);
+			if (i > node->keyTally || node->keys[i - 1] > k)
+				return search(k, node->pointers[i - 1]);
+			else return node;
+		}
+		else return 0;
+	}
+	void tranverse(BTreeNode node) {
+
+		// There are n keys and n+1 children, travers through n keys
+		// and first n children
+		int i;
+		for (i = 0; i < n; i++)
+		{
+			// If this is not leaf, then before printing key[i],
+			// traverse the subtree rooted with child C[i].
+			if (node->leaf == false)
+				/*C[i]->traverse();*/
+				tranverse(node->pointers[i]);
+			cout << " " << node->keys[i];
+		}
+
+		// Print the subtree rooted with last child
+		if (leaf == false)
+			C[i]->traverse();
+	}
+
+	void insert(keyType k, BTreeNode *node)
+	{
+		// If tree is empty
+		if (root == NULL)
+		{
+			// Allocate memory for root
+			root = new BTreeNode(k); // Insert key
+			root->leaf = true;
+		}
+		else // If tree is not empty
+		{
+			// If root is full,split
+			if (root->keyTally == M - 1)
+			{
+				// new root
+				BTreeNode *newRoot = new BTreeNode();
+				newRoot->leaf = true;
+
+				//  old root becomes child of new root
+				newRoot->pointers[0] = root;
+
+				// Split the old root and move 1 key to the new root
+				splitChild(0, root, newRoot);
+
+				// New root has two children now.  Decide which of the
+				// two children is going to have new key
+				int i = 0;
+				if (newRoot->keys[0] < k)
+					i++;
+				insertNonFull(k, root->pointers[i]);
+			}
+		}
+	}
+	void insertNonFull(int k, BTreeNode* node) {
+		// Initialize index as index of rightmost element
+		int i = node->keyTally - 1;
+
+		// If this is a leaf node
+		if (node->leaf == true)
+		{
+			// The following loop does two things
+			// a) Finds the location of new key to be inserted
+			// b) Moves all greater keys to one place ahead
+			while (i >= 0 && node->keys[i] > k)
+			{
+				node->keys[i + 1] = node->keys[i];
+				i--;
+			}
+
+			// Insert the new key at found location
+			node->keys[i + 1] = k;
+			node->keyTally++;
+		}
+		else // If this node is not leaf
+		{
+			// Find the child which is going to have the new key
+			while (i >= 0 && node->keys[i] > k)
+				i--;
+
+			// See if the found child is full
+			if (node->pointers[i + 1]->keyTally == M - 1)
+			{
+				// If the child is full, then split it
+				splitChild(i + 1, node->pointers[i + 1],node);
+
+				// After split, the middle key of C[i] goes up and
+				// C[i] is splitted into two.  See which of the two
+				// is going to have the new key
+				if (node->keys[i + 1] < k)
+					i++;
+			}
+			node->pointers[i + 1]->insertNonFull(k);
+		}
+	}
+
+	void splitChild(keyType k,BTreeNode *y, BTreeNode *node) {
+		// Create a new node which is going to store (t-1) keys
+		// of y
+		BTreeNode *z = new BTreeNode(y->t);
+		z->left = y->leaf;
+		z->keyTally = t - 1;
+
+		// Copy the last (t-1) keys of y to z
+		for (int j = 0; j < t - 1; j++)
+			z->keys[j] = y->keys[j + t];
+
+		// Copy the last t children of y to z
+		if (y->leaf == false)
+		{
+			for (int j = 0; j < t; j++)
+				z->pointers[j] = y->pointers[j + t];
+		}
+
+		// Reduce the number of keys in y
+		y->keyTally = t - 1;
+
+		// Since this node is going to have a new child,
+		// create space of new child
+		for (int j = node->keyTally; j >= i + 1; j--)
+			node->pointers[j + 1] = node->pointers[j];
+
+		// Link the new child to this node
+		node->pointers[i + 1] = z;
+
+		// A key of y will move to this node. Find location of
+		// new key and move all greater keys one space ahead
+		for (int j = n - 1; j >= i; j--)
+			node->keys[j + 1] = node->keys[j];
+
+		// Copy the middle key of y to this node
+		node->keys[i] = y->keys[t - 1];
+
+		// Increment count of keys in this node
+		node->keyTally++;
+	}
+};
+int main()
+{
+	BTree<int,int> t; // A B-Tree with minium degree 3
+	t.insert(10);
+	t.insert(20);
+	t.insert(5);
+	t.insert(6);
+	t.insert(12);
+	t.insert(30);
+	t.insert(7);
+	t.insert(17);
+
+	cout << "Traversal of the constucted tree is ";
+	t.traverse();
+
+	//int k = 6;
+	//(t->search(k,t) != NULL) ? cout << "\nPresent" : cout << "\nNot Present";
+
+	//k = 15;
+	//(t.search(k) != NULL) ? cout << "\nPresent" : cout << "\nNot Present";
+
+	return 0;
+}
