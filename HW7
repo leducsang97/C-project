@@ -12,12 +12,12 @@ public:
 		keys[0] = el;  keyTally = 1;
 	};
 	/*BTreeNode(int t) {
-		t = _t;
-		keys = new int[M- 1];
-		pointers = new BTreeNode *[M];
-		keyTally = 0;
+	t = _t;
+	keys = new int[M- 1];
+	pointers = new BTreeNode *[M];
+	keyTally = 0;
 	}*/
-//cai nay deo hieu constructor kieu gi luon
+	//cai nay deo hieu constructor kieu gi luon
 private:
 	bool leaf;
 	int keyTally;
@@ -27,13 +27,13 @@ private:
 };
 
 template <typename T, int M>
-class BTree{
+class BTree {
 public:
 	BTreeNode *root; // Pointer to root node
 	int t;  // Minimum degree
 	BTree() { root = nullptr; }//initial a tree
 
-	void insert(const T& key) { insert(key,root); }
+	void insert(const T& key) { insert(key, root); }
 	void traverse()
 	{
 		if (root != NULL)
@@ -53,23 +53,17 @@ private:
 		else return 0;
 	}
 	void tranverse(BTreeNode node) {
-
-		// There are n keys and n+1 children, travers through n keys
-		// and first n children
 		int i;
 		for (i = 0; i < n; i++)
 		{
-			// If this is not leaf, then before printing key[i],
-			// traverse the subtree rooted with child C[i].
+
 			if (node->leaf == false)
-				/*C[i]->traverse();*/
 				tranverse(node->pointers[i]);
 			cout << " " << node->keys[i];
 		}
-
-		// Print the subtree rooted with last child
-		if (leaf == false)
-			C[i]->traverse();
+		//// Print the subtree rooted with last child
+		//if (leaf == false)
+		//tranverse(node->pointers[i]);
 	}
 
 	void insert(keyType k, BTreeNode *node)
@@ -135,10 +129,10 @@ private:
 			if (node->pointers[i + 1]->keyTally == M - 1)
 			{
 				// If the child is full, then split it
-				splitChild(i + 1, node->pointers[i + 1],node);
+				splitChild(i + 1, node->pointers[i + 1], node);
 
-				// After split, the middle key of C[i] goes up and
-				// C[i] is splitted into two.  See which of the two
+				// After split, the middle key of pointers[i] goes up and
+				// pointers[i] is splitted into two.  See which of the two
 				// is going to have the new key
 				if (node->keys[i + 1] < k)
 					i++;
@@ -147,7 +141,7 @@ private:
 		}
 	}
 
-	void splitChild(keyType k,BTreeNode *y, BTreeNode *node) {
+	void splitChild(keyType k, BTreeNode *y, BTreeNode *node) {
 		// Create a new node which is going to store (t-1) keys
 		// of y
 		BTreeNode *z = new BTreeNode(y->t);
@@ -190,7 +184,7 @@ private:
 };
 int main()
 {
-	BTree<int,int> t; // A B-Tree with minium degree 3
+	BTree<int, int> t; // A B-Tree with minium degree 3
 	t.insert(10);
 	t.insert(20);
 	t.insert(5);
