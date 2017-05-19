@@ -30,7 +30,7 @@ template <typename T, int M>
 class BTree {
 public:
 	BTreeNode *root; // Pointer to root node
-	int t;  // Minimum degree
+	int t; 
 	BTree() { root = nullptr; }//initial a tree
 
 	void insert(const T& key) { insert(key, root); }
@@ -39,6 +39,7 @@ public:
 		if (root != NULL)
 			traverse(root);
 	}
+	BTreeNode *search(keyType k, BTreeNode *node)
 	/*void deleteTree(const T& key) { deleteTree(root, key); }*/
 
 private:
@@ -106,15 +107,11 @@ private:
 		// If this is a leaf node
 		if (node->leaf == true)
 		{
-			// The following loop does two things
-			// a) Finds the location of new key to be inserted
-			// b) Moves all greater keys to one place ahead
 			while (i >= 0 && node->keys[i] > k)
 			{
 				node->keys[i + 1] = node->keys[i];
 				i--;
 			}
-
 			// Insert the new key at found location
 			node->keys[i + 1] = k;
 			node->keyTally++;
@@ -132,21 +129,20 @@ private:
 				splitChild(i + 1, node->pointers[i + 1], node);
 
 				// After split, the middle key of pointers[i] goes up and
-				// pointers[i] is splitted into two.  See which of the two
-				// is going to have the new key
+				// pointers[i] is splitted into two.
 				if (node->keys[i + 1] < k)
 					i++;
 			}
-			node->pointers[i + 1]->insertNonFull(k);
+			insertNonFull(k, node->pointers[i + 1]);
 		}
 	}
 
 	void splitChild(keyType k, BTreeNode *y, BTreeNode *node) {
 		// Create a new node which is going to store (t-1) keys
 		// of y
-		BTreeNode *z = new BTreeNode(y->t);
-		z->left = y->leaf;
-		z->keyTally = t - 1;
+		BTreeNode *z = new BTreeNode();
+		z->leaf = y->leaf;
+		z->keyTally = M/2-1;
 
 		// Copy the last (t-1) keys of y to z
 		for (int j = 0; j < t - 1; j++)
