@@ -1,27 +1,28 @@
-#include<iostream>
-using namespace std;
+*************************	BTree.h		*********************************
+#include <fstream>
+
+template <typename T, int M>
+class BTree;
 
 template <typename T, int M>
 class BTreeNode {
 	friend class BTree<T, M>;
 public:
 	BTreeNode() {
-		keys = NULL;  keyTally = 0;
-	};
+		keyTally = 0;
+		for (int i = 0; i < M; ++i) {
+			pointers[i] = nullptr;
+		}
+	}
 	BTreeNode(const T& el) {
-		keys[0] = el;  keyTally = 1;
+		keys[0] = el;  keyTally = 1; 
+		for (int i = 0; i < M; ++i) {
+			pointers[i] = nullptr;
+		}
 	};
-	/*BTreeNode(int t) {
-	t = _t;
-	keys = new int[M- 1];
-	pointers = new BTreeNode *[M];
-	keyTally = 0;
-	}*/
-	//cai nay deo hieu constructor kieu gi luon
 private:
 	bool leaf;
 	int keyTally;
-	int t = M / 2;
 	T keys[M - 1];
 	BTreeNode* pointers[M];
 };
@@ -29,175 +30,271 @@ private:
 template <typename T, int M>
 class BTree {
 public:
-	BTreeNode *root; // Pointer to root node
-	int t; 
-	BTree() { root = nullptr; }//initial a tree
-
-	void insert(const T& key) { insert(key, root); }
-	void traverse()
-	{
-		if (root != NULL)
-			traverse(root);
+	//initiate a tree
+	BTree() {
+	root = nullptr;
 	}
-	BTreeNode *search(keyType k, BTreeNode *node)
-	/*void deleteTree(const T& key) { deleteTree(root, key); }*/
+
+	void BTreeInsert(const T& key) { 
+		if (BTreeSearch(root, key) == nullptr) {
+			BTreeInsert(root, key);
+		}
+	}
+
+	void BTreeDelete(const T& key) { 
+		if (root != nullptr) 
+			BTreeDelete(root, key);
+	}
+
+	void BTreeTraversal() { 
+		if (root != nullptr)
+			BTreeTraversal(root);
+	}
 
 private:
-	BTreeNode *search(keyType k, BTreeNode *node) {
+	BTreeNode<T, M>* root;
+	BTreeNode<T,M> *BTreeSearch(BTreeNode<T,M> *node,const T& k) {
 		// Find the first key greater than or equal to k
-		if (node != 0) {
+		if (node != nullptr) {
+			int i;
 			for (i = 1; i <= node->keyTally && k > node->keys[i]; i++);
 			if (i > node->keyTally || node->keys[i - 1] > k)
-				return search(k, node->pointers[i - 1]);
+				return BTreeSearch(node->pointers[i - 1],k);
 			else return node;
 		}
-		else return 0;
-	}
-	void tranverse(BTreeNode node) {
-		int i;
-		for (i = 0; i < n; i++)
-		{
-
-			if (node->leaf == false)
-				tranverse(node->pointers[i]);
-			cout << " " << node->keys[i];
-		}
-		//// Print the subtree rooted with last child
-		//if (leaf == false)
-		//tranverse(node->pointers[i]);
+		else return nullptr;
 	}
 
-	void insert(keyType k, BTreeNode *node)
-	{
+	void BTreeInsert(BTreeNode<T, M>* &node, const T& key) {
 		// If tree is empty
-		if (root == NULL)
-		{
-			// Allocate memory for root
-			root = new BTreeNode(k); // Insert key
-			root->leaf = true;
+		if (node == nullptr)
+		{	// Allocate memory for root
+		root = new BTreeNode<T,M>(key); // Insert key
+		root->leaf = true;
 		}
-		else // If tree is not empty
-		{
-			// If root is full,split
-			if (root->keyTally == M - 1)
-			{
-				// new root
-				BTreeNode *newRoot = new BTreeNode();
-				newRoot->leaf = true;
+		else {
+			//if node is full, split
+			if (node->keyTally == M - 1) { 
+				//if node is root
+				if (node == root) {
+					BTreeNode<T, M>* newRoot = new BTreeNode<T, M>();
+					newRoot->leaf = false;
+					newRoot->pointers[0] = root;
+					root = newRoot;
+					BTreeInsert(newRoot, key);
+					return;
+				}
+			}
 
-				//  old root becomes child of new root
-				newRoot->pointers[0] = root;
+			int k = 0;
+			while (node->keys[k] < key && k < node->keyTally) ++k;
+			//if the node is not a leaf, search the children 
+			if (node->leaf==false) {
+				//if the children are full, split
+				if (node->pointers[k]->keyTally == M - 1) { 
+					int newRoot; //newRoot for more balanced tree postsplit
+					//determine the middle keys as the newRoot
+					if (M % 2 != 0 && key >= node->pointers[k]->keys[M / 2])
+					{
+						newRoot = M / 2;
+					}
+					else newRoot = M / 2 - 1;
 
-				// Split the old root and move 1 key to the new root
-				splitChild(0, root, newRoot);
 
-				// New root has two children now.  Decide which of the
-				// two children is going to have new key
-				int i = 0;
-				if (newRoot->keys[0] < k)
-					i++;
-				insertNonFull(k, root->pointers[i]);
+					BTreeNode<T, M>* node1 = new BTreeNode<T, M>();
+					node1->pointers[0] = node->pointers[k]->pointers[0];
+					for (int i = 0; i < newRoot; ++i) {
+						node1->keys[i] = node->pointers[k]->keys[i];
+						node1->pointers[i + 1] = node->pointers[k]->pointers[i + 1];
+						node1->keyTally++;
+					}
+					BTreeNode<T, M>* node2 = new BTreeNode<T, M>();
+					node2->pointers[0] = node->pointers[k]->pointers[newRoot + 1];
+					for (int i = newRoot + 1; i < M - 1; ++i) {
+						node2->keys[i - (newRoot + 1)] = node->pointers[k]->keys[i];
+						node2->pointers[i - newRoot] = node->pointers[k]->pointers[i + 1];
+						node2->keyTally++;
+					}
+
+					//move allof the bigger value and pointer to the left.
+					node1->leaf = node2->leaf = node->pointers[k]->leaf;
+					for (int j = node->keyTally - 1; j >= k; j--) {
+						node->keys[j + 1] = node->keys[j];
+						node->pointers[j + 2] = node->pointers[j + 1];
+					}
+					//assign new root and link 2 nodes
+					node->keys[k] = node->pointers[k]->keys[newRoot];
+					node->pointers[k] = node1;
+					node->pointers[k + 1] = node2;
+					node->keyTally++;
+					if (key > node->keys[k]) {
+						BTreeInsert(node->pointers[k+1], key);
+					}
+					else BTreeInsert(node->pointers[k], key);
+				}
+				else BTreeInsert(node->pointers[k], key);
+			}
+			else {
+				for (int h = node->keyTally - 1; h >= k; h--)
+					node->keys[h + 1] = node->keys[h];
+					node->keys[k] = key;
+					node->keyTally++;
 			}
 		}
 	}
-	void insertNonFull(int k, BTreeNode* node) {
-		// Initialize index as index of rightmost element
-		int i = node->keyTally - 1;
 
-		// If this is a leaf node
-		if (node->leaf == true)
-		{
-			while (i >= 0 && node->keys[i] > k)
-			{
-				node->keys[i + 1] = node->keys[i];
-				i--;
-			}
-			// Insert the new key at found location
-			node->keys[i + 1] = k;
-			node->keyTally++;
+	void BTreeMerge(BTreeNode<T, M>* &node, int k) { 
+		//merge node->pointers[k] and node->pointers[k+1]
+		node->pointers[k]->keys[node->pointers[k]->keyTally] = node->keys[k];
+		++node->pointers[k]->keyTally;
+		for (int i = 0; i < node->pointers[k + 1]->keyTally; ++i) {
+			node->pointers[k]->keys[node->pointers[k]->keyTally] = node->pointers[k + 1]->keys[i];
+			node->pointers[k]->pointers[node->pointers[k]->keyTally] = node->pointers[k + 1]->pointers[i];
+			++node->pointers[k]->keyTally;
 		}
-		else // If this node is not leaf
-		{
-			// Find the child which is going to have the new key
-			while (i >= 0 && node->keys[i] > k)
-				i--;
+		node->pointers[k]->pointers[node->pointers[k]->keyTally] = node->pointers[k + 1]->pointers[node->pointers[k + 1]->keyTally];
+		delete node->pointers[k + 1];
+		if (node == root && node->keyTally == 1) {
+			BTreeNode<T, M>* toDelete = node;
+			root = node->pointers[k];
+			delete toDelete;
+			return;
+		}
+		for (int i = k + 1; i < node->keyTally; ++i) {
+			node->keys[i - 1] = node->keys[i];
+			node->pointers[i] = node->pointers[i + 1];
+		}
+		node->pointers[node->keyTally] = nullptr;
+		--node->keyTally;
+	}
 
-			// See if the found child is full
-			if (node->pointers[i + 1]->keyTally == M - 1)
-			{
-				// If the child is full, then split it
-				splitChild(i + 1, node->pointers[i + 1], node);
-
-				// After split, the middle key of pointers[i] goes up and
-				// pointers[i] is splitted into two.
-				if (node->keys[i + 1] < k)
-					i++;
+	void BTreeDelete(BTreeNode<T, M>* &node, const T& key) {
+		int k = 0;
+		for (k; node->keys[k] < key && k < node->keyTally; k++) {}
+		//if node is leaf, 
+		if (node->leaf=true) {
+			//if delete make the tree empty, delete tree.		
+			if (node == root && node->keyTally == 0) {
+				delete root;
+				return;
 			}
-			insertNonFull(k, node->pointers[i + 1]);
+			if (node->keys[k] != key) {
+				return;
+			}
+			//move to the left to fill the hole
+			for (int i = k; i < node->keyTally - 1; i++) {
+				node->keys[i] = node->keys[i + 1];
+			}
+				node->keyTally--;
+				return;
+		}
+		else {
+			//if cannot find in node, find in their children
+			if (node->keys[k] != key) {
+				BTreeDelete(node->pointers[k], key);
+			}
+			else {
+				BTreeNode<T, M> *temp = node->pointers[k];
+				if (temp = nullptr) {
+					//move to the left to fill the hole
+					for (int i = k; i < node->keyTally - 1; i++) {
+						node->keys[i] = node->keys[i + 1];
+						node->keyTally--;
+						return;
+					}
+				}
+				else {
+					//find the succesor
+					while (temp->pointers[temp->keyTally] != nullptr)
+						temp = temp->pointers[temp->keyTally];
+
+					T succ = temp->keys[temp->keyTally - 1];
+					node->keys[k] = succ;
+					//delete succesor in its nodes
+					BTreeDelete(node->pointers[k], succ);
+				}
+			}
+		}
+
+		if (!node->pointers[k]->leaf)
+			if (node->pointers[k]->keyTally == 0)
+				node->pointers[k] = node->pointers[k]->pointers[0];
+		if (node->pointers[k]->keyTally >= M / 2) return;
+		if (k > 0) {
+			if (node->pointers[k - 1]->keyTally > M / 2) {
+				//check left sibling node if it needs to be merged
+				while (node->pointers[k]->keyTally < M / 2) {
+					BTreeInsert(node->pointers[k], node->keys[k]);
+					node->keys[k - 1] = node->pointers[k - 1]->keys[node->pointers[k - 1]->keyTally - 1];
+					BTreeDelete(node->pointers[k - 1], node->keys[k]);
+				}
+				return;
+			}
+			else if (node->pointers[k - 1]->keyTally <= M / 2) {
+				if (node->pointers[k - 1]->keyTally + node->pointers[k]->keyTally <= M - 2) {
+					BTreeMerge(node, k - 1);
+					return;
+				}
+			}
+		}
+
+		if (k < node->keyTally) {
+			if (node->pointers[k + 1]->keyTally > M / 2) { 
+				//do same thing with right sibling node
+				while (node->pointers[k]->keyTally < M / 2) {
+					BTreeInsert(node->pointers[k], node->keys[k]);
+					node->keys[k] = node->pointers[k + 1]->keys[0];
+					BTreeDelete(node->pointers[k + 1], node->keys[k]);
+				}
+				return;
+			}
+			else if (node->pointers[k + 1]->keyTally <= M / 2) {
+				if (node->pointers[k]->keyTally + node->pointers[k + 1]->keyTally <= M - 2) {
+					//merge with right sibling node
+					BTreeMerge(node, k);
+					return;
+				}
+			}
 		}
 	}
 
-	void splitChild(keyType k, BTreeNode *y, BTreeNode *node) {
-		// Create a new node which is going to store (t-1) keys
-		// of y
-		BTreeNode *z = new BTreeNode();
-		z->leaf = y->leaf;
-		z->keyTally = M/2-1;
-
-		// Copy the last (t-1) keys of y to z
-		for (int j = 0; j < t - 1; j++)
-			z->keys[j] = y->keys[j + t];
-
-		// Copy the last t children of y to z
-		if (y->leaf == false)
+	void BTreeTraversal(BTreeNode<T, M>* &node) {
+		int i;
+		for (i = 0; i < node->keyTally; i++)
 		{
-			for (int j = 0; j < t; j++)
-				z->pointers[j] = y->pointers[j + t];
+			if (node->leaf == false)
+			BTreeTraversal(node->pointers[i]);
+			std::cout << " " << node->keys[i];
 		}
-
-		// Reduce the number of keys in y
-		y->keyTally = t - 1;
-
-		// Since this node is going to have a new child,
-		// create space of new child
-		for (int j = node->keyTally; j >= i + 1; j--)
-			node->pointers[j + 1] = node->pointers[j];
-
-		// Link the new child to this node
-		node->pointers[i + 1] = z;
-
-		// A key of y will move to this node. Find location of
-		// new key and move all greater keys one space ahead
-		for (int j = n - 1; j >= i; j--)
-			node->keys[j + 1] = node->keys[j];
-
-		// Copy the middle key of y to this node
-		node->keys[i] = y->keys[t - 1];
-
-		// Increment count of keys in this node
-		node->keyTally++;
+		// Print the subtree rooted with last child
+		if (node->leaf == false)
+			BTreeTraversal(node->pointers[i]);
 	}
+	
 };
-int main()
-{
-	BTree<int, int> t; // A B-Tree with minium degree 3
-	t.insert(10);
-	t.insert(20);
-	t.insert(5);
-	t.insert(6);
-	t.insert(12);
-	t.insert(30);
-	t.insert(7);
-	t.insert(17);
 
-	cout << "Traversal of the constucted tree is ";
-	t.traverse();
+***********************************	main.cpp	***************************************
+#include <iostream>
+#include <fstream>
+#include "BTree.h"
 
-	//int k = 6;
-	//(t->search(k,t) != NULL) ? cout << "\nPresent" : cout << "\nNot Present";
+int main() {
+	BTree<int, 7> tree;
 
-	//k = 15;
-	//(t.search(k) != NULL) ? cout << "\nPresent" : cout << "\nNot Present";
+	std::ifstream in;
+	in.open("insert.txt");
 
-	return 0;
+	int temp_input;
+	while (in >> temp_input)
+		tree.BTreeInsert(temp_input);
+
+	in.close();
+
+	in.open("delete.txt");
+	while (in >> temp_input)
+		tree.BTreeDelete(temp_input);
+
+	tree.BTreeTraversal();
+
+	std::cout << std::endl << "Execution successful." << std::endl;
 }
